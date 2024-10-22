@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Battleship</string>
+    <string name="send_welcome_button_text">Enviar Bienvenida</string>
+    <string name="turno_jugador_texto">Turno del Jugador</string> <!-- Aquí defines el texto para el turno -->
+    <string name="tablero">Tablero</string> <!-- Aquí defines el texto para el turno -->
+    <string name="tablero_jugador_1">Tablero Jugador 1</string>
+    <string name="tablero_jugador_2">Tablero Jugador 2</string>
+
+    <string name="disparar">Disparar</string>
+    <string name="barco">Colocar barco</string>
+</resources>

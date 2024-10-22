@@ -1,0 +1,69 @@
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <GridLayout
+        android:id="@+id/gridTableroJugador1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:rowCount="10"
+        android:columnCount="10" />
+
+    <GridLayout
+        android:id="@+id/gridTableroJugador2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:rowCount="10"
+        android:columnCount="10"
+        app:layout_constraintTop_toBottomOf="@+id/gridTableroJugador1"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <EditText
+        android:id="@+id/inputFila"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Fila"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@+id/gridTableroJugador2"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <EditText
+        android:id="@+id/inputColumna"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:hint="Columna"
+        android:inputType="number"
+        app:layout_constraintTop_toBottomOf="@id/inputFila"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/buttonDisparar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/disparar"
+        app:layout_constraintTop_toBottomOf="@id/inputColumna"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+    <Button
+        android:id="@+id/buttonColocarBarco"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/barco"
+        app:layout_constraintTop_toBottomOf="@id/buttonDisparar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
