@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -6,64 +7,72 @@
     tools:context=".MainActivity">
 
     <GridLayout
-        android:id="@+id/gridTableroJugador1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:rowCount="10"
-        android:columnCount="10" />
-
-    <GridLayout
-        android:id="@+id/gridTableroJugador2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:rowCount="10"
+        android:id="@+id/gridLayoutBoard"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:columnCount="10"
-        app:layout_constraintTop_toBottomOf="@+id/gridTableroJugador1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <EditText
-        android:id="@+id/inputFila"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:hint="Fila"
-        android:inputType="number"
-        app:layout_constraintTop_toBottomOf="@+id/gridTableroJugador2"
+        android:rowCount="10"
+        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/buttonLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        app:layout_constraintDimensionRatio="1:1"/>
 
-    <EditText
-        android:id="@+id/inputColumna"
+    <LinearLayout
+        android:id="@+id/buttonLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Columna"
-        android:inputType="number"
-        app:layout_constraintTop_toBottomOf="@id/inputFila"
+        android:orientation="vertical"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/gridLayoutBoard"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="8dp"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <Button
-        android:id="@+id/buttonDisparar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/disparar"
-        app:layout_constraintTop_toBottomOf="@id/inputColumna"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/buttonColocarBarco"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/barco"
-        app:layout_constraintTop_toBottomOf="@id/buttonDisparar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+            <Button
+                android:id="@+id/buttonCarrier"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/carrier" />
+
+            <Button
+                android:id="@+id/buttonBattleship"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/battleship" />
+
+            <Button
+                android:id="@+id/buttonCruiser"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cruiser" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonSubmarine"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/submarine" />
+
+            <Button
+                android:id="@+id/buttonDestroyer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/destroyer" />
+        </LinearLayout>
+    </LinearLayout>
+
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

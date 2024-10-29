@@ -1,125 +1,187 @@
 package es.unavarra.tlm.dscr_24_04;
 
+// Para pintar los barcos y generar los botones
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import android.widget.Button;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+// Para enviar la información al servidor
+import okhttp3.*;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.IOException;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private GridLayout gridTableroJugador1;
-    private GridLayout gridTableroJugador2;
-    private EditText inputFila;
-    private EditText inputColumna;
-    private Button buttonDisparar;
-    private Button buttonColocarBarco;
-    private OkHttpClient client = new OkHttpClient(); // Asegúrate de usar OkHttpClient aquí
-    private String gameId = "tu_game_id"; // Cambiar a un ID de juego real
+    private GridLayout gridLayoutBoard;
+    private Ship currentShip; // Barco que el usuario está colocando
+    private boolean isPlacingShip = false; // Modo de colocación
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Inicializar los GridLayouts de los tableros
-        gridTableroJugador1 = findViewById(R.id.gridTableroJugador1);
-        gridTableroJugador2 = findViewById(R.id.gridTableroJugador2);
-        inputFila = findViewById(R.id.inputFila);
-        inputColumna = findViewById(R.id.inputColumna);
-        buttonDisparar = findViewById(R.id.buttonDisparar);
-        buttonColocarBarco = findViewById(R.id.buttonColocarBarco);
+        gridLayoutBoard = findViewById(R.id.gridLayoutBoard);
 
-        // Crear el tablero visualmente
-        generarTableroVisual(gridTableroJugador1);
-        generarTableroVisual(gridTableroJugador2);
+        // Inicializar el tablero de 10x10
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                // Crear una vista para cada celda
+                ImageView cellView = new ImageView(this);
+                GridLayout.LayoutParams params = new GridLayout.LayoutParams();
+                params.width = 90; // Ancho de la celda
+                params.height = 90; // Altura de la celda
+                cellView.setLayoutParams(params);
+                cellView.setBackgroundResource(R.drawable.cell_background); // Fondo de celda
 
-        // Configurar el evento del botón de disparar
-        buttonDisparar.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int fila = Integer.parseInt(inputFila.getText().toString());
-                int columna = Integer.parseInt(inputColumna.getText().toString());
-                realizarDisparoAPI(fila, columna);
+                // Crear un BoardCell asociado a cada celda
+                BoardCell boardCell = new BoardCell(row, col);
+                cellView.setTag(boardCell);
+
+                // Agregar clic para mostrar las coordenadas
+                cellView.setOnClickListener(view -> {
+                    BoardCell cell = (BoardCell) view.getTag();
+                    handleCellClick(cell);
+                });
+
+                // Añadir la vista al GridLayout
+                gridLayoutBoard.addView(cellView);
             }
+        }
+
+        // Configuración de botones para seleccionar tipos de barcos
+        Button buttonCarrier = findViewById(R.id.buttonCarrier);
+        buttonCarrier.setOnClickListener(v -> {
+            currentShip = new Ship("carrier");
+            isPlacingShip = true;
+            Toast.makeText(this, "Selecciona 5 celdas para el Carrier", Toast.LENGTH_SHORT).show();
         });
 
-        // Configurar el evento del botón de colocar barco
-        buttonColocarBarco.setOnClickListener(new View.OnClickListener() {
+        Button buttonBattleship = findViewById(R.id.buttonBattleship);
+        buttonBattleship.setOnClickListener(v -> {
+            currentShip = new Ship("battleship");
+            isPlacingShip = true;
+            Toast.makeText(this, "Selecciona 4 celdas para el Battleship", Toast.LENGTH_SHORT).show();
+        });
+
+        Button buttonCruiser = findViewById(R.id.buttonCruiser);
+        buttonCruiser.setOnClickListener(v -> {
+            currentShip = new Ship("cruiser");
+            isPlacingShip = true;
+            Toast.makeText(this, "Selecciona 3 celdas para el Cruiser", Toast.LENGTH_SHORT).show();
+        });
+
+        Button buttonSubmarine = findViewById(R.id.buttonSubmarine);
+        buttonSubmarine.setOnClickListener(v -> {
+            currentShip = new Ship("submarine");
+            isPlacingShip = true;
+            Toast.makeText(this, "Selecciona 3 celdas para el Submarine", Toast.LENGTH_SHORT).show();
+        });
+
+        Button buttonDestroyer = findViewById(R.id.buttonDestroyer);
+        buttonDestroyer.setOnClickListener(v -> {
+            currentShip = new Ship("destroyer");
+            isPlacingShip = true;
+            Toast.makeText(this, "Selecciona 2 celdas para el Destroyer", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    public void sendShipToServer(Ship ship) {
+        // Verifica si el barco cumple las condiciones antes de enviarlo
+        if (!ship.isValid()) {
+            Toast.makeText(this, "La colocación del barco no es válida", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        OkHttpClient client = new OkHttpClient();
+        String gameId = "12345"; // Usa el ID real del juego
+        String url = "https://api.battleship.tatai.es/v2/game/" + gameId + "/ship";
+
+        // Crear JSON para el cuerpo de la solicitud
+        JSONObject json = new JSONObject();
+        try {
+            json.put("ship_type", ship.getType());
+
+            JSONArray positionsArray = new JSONArray();
+            for (Ship.Position pos : ship.getPositions()) {
+                JSONObject position = new JSONObject();
+                position.put("row", pos.getRow());
+                position.put("col", pos.getCol());
+                positionsArray.put(position);
+            }
+            json.put("positions", positionsArray);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        RequestBody body = RequestBody.create(json.toString(), MediaType.parse("application/json"));
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .addHeader("Authorization", "session_key")  // Usa la clave de sesión del usuario
+                .build();
+
+        client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onClick(View v) {
-                // Implementar la lógica para colocar un barco
+            public void onFailure(Call call, IOException e) {
+                e.printStackTrace();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error al colocar el barco", Toast.LENGTH_SHORT).show());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Barco colocado con éxito", Toast.LENGTH_SHORT).show());
+                } else {
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error al colocar el barco", Toast.LENGTH_SHORT).show());
+                }
             }
         });
     }
 
-    // Método para generar el tablero visualmente
-    private void generarTableroVisual(GridLayout gridLayout) {
-        gridLayout.removeAllViews(); // Limpiar el tablero
+    private void handleCellClick(BoardCell cell) {
+        if (isPlacingShip && currentShip != null) {
+            // Verifica que la celda no esté ya seleccionada
+            for (Ship.Position pos : currentShip.getPositions()) {
+                if (pos.getRow() == cell.getRow() && pos.getCol() == cell.getCol()) {
+                    Toast.makeText(this, "Esta celda ya está ocupada por el barco actual", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            }
 
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 10; j++) {
-                TextView textView = new TextView(this);
-                textView.setText("~"); // Representación de agua inicialmente
-                textView.setPadding(8, 8, 8, 8);
-                gridLayout.addView(textView);
+            // Agrega la posición seleccionada al barco
+            currentShip.addPosition(cell.getRow(), cell.getCol());
+
+            // Calcula el índice correcto de la celda en el GridLayout y cambia su fondo
+            int index = cell.getRow() * 10 + cell.getCol();
+            ImageView cellView = (ImageView) gridLayoutBoard.getChildAt(index);
+            cellView.setBackgroundResource(R.drawable.ship_background);
+
+            // Verifica si se ha alcanzado el número de celdas requerido para este barco
+            if (currentShip.getPositions().size() == getRequiredSizeForShip(currentShip.getType())) {
+                isPlacingShip = false; // Desactiva el modo de colocación
+                Toast.makeText(this, currentShip.getType() + " colocado", Toast.LENGTH_SHORT).show();
+
+                // Envía el barco al servidor
+                sendShipToServer(currentShip);
             }
         }
     }
 
-    // Método para realizar un disparo a través de la API
-    private void realizarDisparoAPI(int fila, int columna) {
-        String url = "https://api.battleship.tatai.es/v2/game/" + gameId + "/shoot";
-
-        try {
-            JSONObject json = new JSONObject();
-            JSONObject position = new JSONObject();
-            position.put("row", (char) ('A' + fila)); // Convertir fila a letra
-            position.put("column", columna + 1); // Ajustar columna para que empiece desde 1
-
-            json.put("position", position);
-
-            RequestBody body = RequestBody.create(json.toString(), MediaType.get("application/json; charset=utf-8"));
-            Request request = new Request.Builder()
-                    .url(url)
-                    .post(body)
-                    .build();
-
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error al realizar el disparo", Toast.LENGTH_SHORT).show());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "Disparo realizado", Toast.LENGTH_SHORT).show();
-                            // Aquí puedes manejar la respuesta y actualizar el tablero
-                        });
-                    } else {
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error en la respuesta", Toast.LENGTH_SHORT).show());
-                    }
-                }
-            });
-        } catch (JSONException e) {
-            e.printStackTrace();
+    // Para determinar el tamaño de cada barco
+    private int getRequiredSizeForShip(String type) {
+        switch (type) {
+            case "carrier": return 5;
+            case "battleship": return 4;
+            case "cruiser": return 3;
+            case "submarine": return 3;
+            case "destroyer": return 2;
+            default: return 0;
         }
     }
 }
