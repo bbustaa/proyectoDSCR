@@ -156,43 +156,59 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleCellClick(BoardCell cell) {
         if (isPlacingShip && currentShip != null) {
-            int shipSize = getRequiredSizeForShip(currentShip.getType());
+            // Obtén la posición inicial en la que quieres comenzar a colocar el barco
+            int startRow = cell.getRow();
+            int startCol = cell.getCol();
 
-            // Validar que las posiciones no se salgan del tablero
-            if (isHorizontal && cell.getCol() + shipSize > 10) {
-                Toast.makeText(this, "El barco no cabe en esta posición horizontalmente", Toast.LENGTH_SHORT).show();
-                return;
-            } else if (!isHorizontal && cell.getRow() + shipSize > 10) {
-                Toast.makeText(this, "El barco no cabe en esta posición verticalmente", Toast.LENGTH_SHORT).show();
-                return;
+            // Verifica si el barco se puede colocar en la orientación seleccionada sin salirse del tablero
+            if (isHorizontal) {
+                if (startCol + getRequiredSizeForShip(currentShip.getType()) > 10) {
+                    Toast.makeText(this, "No hay suficiente espacio horizontal para colocar el barco aquí", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+            } else { // Orientación vertical
+                if (startRow + getRequiredSizeForShip(currentShip.getType()) > 10) {
+                    Toast.makeText(this, "No hay suficiente espacio vertical para colocar el barco aquí", Toast.LENGTH_SHORT).show();
+                    return;
+                }
             }
 
-            // Colocar el barco en la orientación deseada
-            for (int i = 0; i < shipSize; i++) {
-                int row = isHorizontal ? cell.getRow() : cell.getRow() + i;
-                int col = isHorizontal ? cell.getCol() + i : cell.getCol();
+            // Verifica si las celdas en la posición y orientación deseadas ya están ocupadas
+            for (int i = 0; i < getRequiredSizeForShip(currentShip.getType()); i++) {
+                int row = isHorizontal ? startRow : startRow + i;
+                int col = isHorizontal ? startCol + i : startCol;
 
-                // Asegurarse de que las celdas no están ocupadas previamente
                 for (Ship.Position pos : currentShip.getPositions()) {
                     if (pos.getRow() == row && pos.getCol() == col) {
                         Toast.makeText(this, "Parte del barco ya está en esta posición", Toast.LENGTH_SHORT).show();
                         return;
                     }
                 }
-
-                // Agregar y pintar la celda
-                currentShip.addPosition(row, col);
-                ImageView cellView = gridCells[row][col];
-                cellView.setBackgroundResource(R.drawable.ship_background); // Asegúrate de que `ship_background` esté configurado
             }
 
-            isPlacingShip = false; // Desactiva el modo de colocación
-            Toast.makeText(this, currentShip.getType() + " colocado", Toast.LENGTH_SHORT).show();
+            // Coloca el barco en las celdas correctas
+            for (int i = 0; i < getRequiredSizeForShip(currentShip.getType()); i++) {
+                int row = isHorizontal ? startRow : startRow + i;
+                int col = isHorizontal ? startCol + i : startCol;
 
-            // Enviar barco al servidor
-            sendShipToServer(currentShip);
+                currentShip.addPosition(row, col);
+
+                // Usa la matriz de referencia para obtener y pintar la celda directamente
+                ImageView cellView = gridCells[row][col];
+                cellView.setBackgroundResource(R.drawable.ship_background); // Asegúrate de que `ship_background` esté visible y configurado en `res/drawable`
+            }
+
+            // Verifica si el barco ha alcanzado el tamaño necesario
+            if (currentShip.getPositions().size() == getRequiredSizeForShip(currentShip.getType())) {
+                isPlacingShip = false; // Desactiva el modo de colocación
+                Toast.makeText(this, currentShip.getType() + " colocado", Toast.LENGTH_SHORT).show();
+
+                // Envía el barco al servidor
+                sendShipToServer(currentShip);
+            }
         }
     }
+
 
 
     // Para determinar el tamaño de cada barco
