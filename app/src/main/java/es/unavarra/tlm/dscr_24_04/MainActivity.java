@@ -2,6 +2,7 @@ package es.unavarra.tlm.dscr_24_04;
 
 // Para pintar los barcos y generar los botones
 import android.os.Bundle;
+import android.util.Log;            // Para depurar
 import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -18,17 +19,26 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity {
 
     private GridLayout gridLayoutBoard;
+    private ImageView[][] gridCells = new ImageView[10][10]; // Matriz para almacenar cada celda del tablero
     private Ship currentShip; // Barco que el usuario está colocando
     private boolean isPlacingShip = false; // Modo de colocación
+    private boolean isHorizontal = true; // Control de orientación
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Configuración de los botones de orientación (horizontal/vertical)
+        Button orientationButton = findViewById(R.id.orientationButton);
+        orientationButton.setOnClickListener(v -> {
+            isHorizontal = !isHorizontal;
+            Toast.makeText(this, "Orientación: " + (isHorizontal ? "Horizontal" : "Vertical"), Toast.LENGTH_SHORT).show();
+        });
+
         gridLayoutBoard = findViewById(R.id.gridLayoutBoard);
 
-        // Inicializar el tablero de 10x10
+        // Inicializar el tablero de 10x10 y almacenar cada celda en la matriz
         for (int row = 0; row < 10; row++) {
             for (int col = 0; col < 10; col++) {
                 // Crear una vista para cada celda
@@ -39,20 +49,20 @@ public class MainActivity extends AppCompatActivity {
                 cellView.setLayoutParams(params);
                 cellView.setBackgroundResource(R.drawable.cell_background); // Fondo de celda
 
-                // Crear un BoardCell asociado a cada celda
-                BoardCell boardCell = new BoardCell(row, col);
-                cellView.setTag(boardCell);
+                // Añadir la vista al GridLayout y a la matriz
+                gridLayoutBoard.addView(cellView);
+                gridCells[row][col] = cellView; // Almacenar la celda en la matriz para referencia directa
 
                 // Agregar clic para mostrar las coordenadas
+                BoardCell boardCell = new BoardCell(row, col);
+                cellView.setTag(boardCell);
                 cellView.setOnClickListener(view -> {
                     BoardCell cell = (BoardCell) view.getTag();
                     handleCellClick(cell);
                 });
-
-                // Añadir la vista al GridLayout
-                gridLayoutBoard.addView(cellView);
             }
         }
+
 
         // Configuración de botones para seleccionar tipos de barcos
         Button buttonCarrier = findViewById(R.id.buttonCarrier);
@@ -146,32 +156,44 @@ public class MainActivity extends AppCompatActivity {
 
     private void handleCellClick(BoardCell cell) {
         if (isPlacingShip && currentShip != null) {
-            // Verifica que la celda no esté ya seleccionada
-            for (Ship.Position pos : currentShip.getPositions()) {
-                if (pos.getRow() == cell.getRow() && pos.getCol() == cell.getCol()) {
-                    Toast.makeText(this, "Esta celda ya está ocupada por el barco actual", Toast.LENGTH_SHORT).show();
-                    return;
+            int shipSize = getRequiredSizeForShip(currentShip.getType());
+
+            // Validar que las posiciones no se salgan del tablero
+            if (isHorizontal && cell.getCol() + shipSize > 10) {
+                Toast.makeText(this, "El barco no cabe en esta posición horizontalmente", Toast.LENGTH_SHORT).show();
+                return;
+            } else if (!isHorizontal && cell.getRow() + shipSize > 10) {
+                Toast.makeText(this, "El barco no cabe en esta posición verticalmente", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Colocar el barco en la orientación deseada
+            for (int i = 0; i < shipSize; i++) {
+                int row = isHorizontal ? cell.getRow() : cell.getRow() + i;
+                int col = isHorizontal ? cell.getCol() + i : cell.getCol();
+
+                // Asegurarse de que las celdas no están ocupadas previamente
+                for (Ship.Position pos : currentShip.getPositions()) {
+                    if (pos.getRow() == row && pos.getCol() == col) {
+                        Toast.makeText(this, "Parte del barco ya está en esta posición", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                 }
+
+                // Agregar y pintar la celda
+                currentShip.addPosition(row, col);
+                ImageView cellView = gridCells[row][col];
+                cellView.setBackgroundResource(R.drawable.ship_background); // Asegúrate de que `ship_background` esté configurado
             }
 
-            // Agrega la posición seleccionada al barco
-            currentShip.addPosition(cell.getRow(), cell.getCol());
+            isPlacingShip = false; // Desactiva el modo de colocación
+            Toast.makeText(this, currentShip.getType() + " colocado", Toast.LENGTH_SHORT).show();
 
-            // Calcula el índice correcto de la celda en el GridLayout y cambia su fondo
-            int index = cell.getRow() * 10 + cell.getCol();
-            ImageView cellView = (ImageView) gridLayoutBoard.getChildAt(index);
-            cellView.setBackgroundResource(R.drawable.ship_background);
-
-            // Verifica si se ha alcanzado el número de celdas requerido para este barco
-            if (currentShip.getPositions().size() == getRequiredSizeForShip(currentShip.getType())) {
-                isPlacingShip = false; // Desactiva el modo de colocación
-                Toast.makeText(this, currentShip.getType() + " colocado", Toast.LENGTH_SHORT).show();
-
-                // Envía el barco al servidor
-                sendShipToServer(currentShip);
-            }
+            // Enviar barco al servidor
+            sendShipToServer(currentShip);
         }
     }
+
 
     // Para determinar el tamaño de cada barco
     private int getRequiredSizeForShip(String type) {
